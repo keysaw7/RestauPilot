@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modèle Utilisateur
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          Role      @default(WAITER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  shifts        Shift[]
+  orders        Order[]
+}
+
+// Modèle Table
+model Table {
+  id          String    @id @default(cuid())
+  number      Int       @unique
+  capacity    Int
+  status      TableStatus @default(AVAILABLE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  reservations Reservation[]
+  orders      Order[]
+}
+
+// Modèle Réservation
+model Reservation {
+  id          String    @id @default(cuid())
+  tableId     String
+  table       Table     @relation(fields: [tableId], references: [id])
+  customerName String
+  customerPhone String?
+  customerEmail String?
+  date        DateTime
+  partySize   Int
+  status      ReservationStatus @default(CONFIRMED)
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Modèle Catégorie
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  items       Item[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Modèle Article
+model Item {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
+  orders      OrderItem[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Modèle Commande
+model Order {
+  id          String    @id @default(cuid())
+  tableId     String
+  table       Table     @relation(fields: [tableId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  status      OrderStatus @default(PENDING)
+  items       OrderItem[]
+  total       Float
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Modèle Article de Commande
+model OrderItem {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id])
+  quantity    Int
+  price       Float
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Modèle Shift
+model Shift {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  startTime   DateTime
+  endTime     DateTime?
+  status      ShiftStatus @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Enums
+enum Role {
+  ADMIN
+  MANAGER
+  WAITER
+  KITCHEN
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  READY
+  DELIVERED
+  PAID
+  CANCELLED
+}
+
+enum ShiftStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+} 
